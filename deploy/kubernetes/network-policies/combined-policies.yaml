@@ -10,123 +10,62 @@ spec:
   - Ingress
   - Egress
 ---
-# Allow ingress traffic to the UI service
+# Allow Egress for DNS Resolution
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-ui-ingress
+  name: allow-dns-egress
   namespace: retail-store-sample-app
 spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: ui
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    ports:
-    - protocol: TCP
-      port: 8080
----
-# Allow egress traffic from the UI service
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-ui-egress
-  namespace: retail-store-sample-app
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: ui
+  podSelector: {}
   policyTypes:
   - Egress
   egress:
   - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+# Allow Ingress and Egress for Catalog Service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-catalog-traffic
+  namespace: retail-store-sample-app
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: catalog
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector: {}
+      podSelector: {}
+  egress:
+  - to:
+    - namespaceSelector: {}
+      podSelector: {}
     ports:
     - protocol: TCP
       port: 80
----
-# Allow ingress traffic to the orders service
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-orders-ingress
-  namespace: retail-store-sample-app
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: orders
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: ui
-    ports:
     - protocol: TCP
       port: 8080
 ---
-# Allow egress traffic from the orders service
+# Allow Egress for Catalog to Database
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-orders-egress
-  namespace: retail-store-sample-app
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: orders
-  policyTypes:
-  - Egress
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: orders-postgresql
-    ports:
-    - protocol: TCP
-      port: 5432
-  - to:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: orders-rabbitmq
-    ports:
-    - protocol: TCP
-      port: 5672
-    - protocol: TCP
-      port: 15672
----
-# Allow ingress traffic to the catalog service
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-catalog-ingress
-  namespace: retail-store-sample-app
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: catalog
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: ui
-    ports:
-    - protocol: TCP
-      port: 8080
----
-# Allow egress traffic from the catalog service
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-catalog-egress
+  name: allow-catalog-db-egress
   namespace: retail-store-sample-app
 spec:
   podSelector:
@@ -136,134 +75,115 @@ spec:
   - Egress
   egress:
   - to:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: catalog-mysql
+    - ipBlock:
+        cidr: 172.20.40.15/32
     ports:
     - protocol: TCP
       port: 3306
 ---
-# Allow ingress traffic to the carts service
+# Allow Ingress and Egress for UI Service
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-carts-ingress
+  name: allow-ui-traffic
+  namespace: retail-store-sample-app
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ui
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector: {}
+      podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - namespaceSelector: {}
+      podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 8080
+---
+# Allow Ingress and Egress for Orders Service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-orders-traffic
+  namespace: retail-store-sample-app
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: orders
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector: {}
+      podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - namespaceSelector: {}
+      podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 5432
+    - protocol: TCP
+      port: 5672
+    - protocol: TCP
+      port: 8080
+---
+# Allow ingress traffic to the carts-dynamodb service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-carts-dynamodb-ingress
   namespace: retail-store-sample-app
 spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: carts
+      app.kubernetes.io/component: dynamodb
   policyTypes:
   - Ingress
   ingress:
   - from:
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: ui
-    ports:
-    - protocol: TCP
-      port: 8080
----
-# Allow egress traffic from the carts service
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-carts-egress
-  namespace: retail-store-sample-app
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: carts
-  policyTypes:
-  - Egress
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: carts-dynamodb
+          app.kubernetes.io/name: carts
     ports:
     - protocol: TCP
       port: 8000
 ---
-# Allow ingress traffic to the checkout service
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-checkout-ingress
+  name: allow-all-port-80
   namespace: retail-store-sample-app
 spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: checkout
+  podSelector: {}
   policyTypes:
   - Ingress
+  - Egress
   ingress:
   - from:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: ui
+    - podSelector: {}
     ports:
     - protocol: TCP
-      port: 8080
----
-# Allow egress traffic from the checkout service
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-checkout-egress
-  namespace: retail-store-sample-app
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: checkout
-  policyTypes:
-  - Egress
+      port: 80
   egress:
   - to:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: checkout-redis
-    ports:
-    - protocol: TCP
-      port: 6379
----
-# Allow ingress traffic to the assets service
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-assets-ingress
-  namespace: retail-store-sample-app
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: assets
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: ui
-    ports:
-    - protocol: TCP
-      port: 8080
----
-# Allow egress traffic from the assets service
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-assets-egress
-  namespace: retail-store-sample-app
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: assets
-  policyTypes:
-  - Egress
-  egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
+    - podSelector: {}
     ports:
     - protocol: TCP
       port: 80
