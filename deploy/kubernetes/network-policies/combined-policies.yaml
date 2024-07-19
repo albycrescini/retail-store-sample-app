@@ -1,9 +1,8 @@
----
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: default-deny-all
-  namespace: default
+  name: deny-all-traffic
+  namespace: retail-store-sample-app
 spec:
   podSelector: {}
   policyTypes:
@@ -13,321 +12,173 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-ui-traffic
-  namespace: default
+  name: allow-dns
+  namespace: retail-store-sample-app
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: []
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ui
+  namespace: retail-store-sample-app
 spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: ui
-      app.kubernetes.io/instance: ui
-      app.kubernetes.io/component: service
-      app.kubernetes.io/owner: retail-store-sample
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: carts
-              app.kubernetes.io/instance: carts
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: catalog
-              app.kubernetes.io/instance: catalog
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: catalog-mysql
-              app.kubernetes.io/instance: catalog-mysql
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: checkout
-              app.kubernetes.io/instance: checkout
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: carts
-              app.kubernetes.io/instance: carts
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: catalog
-              app.kubernetes.io/instance: catalog
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: catalog-mysql
-              app.kubernetes.io/instance: catalog-mysql
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: checkout
-              app.kubernetes.io/instance: checkout
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
   policyTypes:
   - Ingress
   - Egress
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: carts
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: catalog
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: checkout
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-carts-traffic
-  namespace: default
+  name: carts
+  namespace: retail-store-sample-app
 spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: carts
-      app.kubernetes.io/instance: carts
-      app.kubernetes.io/component: service
-      app.kubernetes.io/owner: retail-store-sample
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: ui
-              app.kubernetes.io/instance: ui
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: catalog
-              app.kubernetes.io/instance: catalog
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: carts-dynamodb
-              app.kubernetes.io/instance: carts-dynamodb
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
   policyTypes:
   - Ingress
   - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ui
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: dynamodb
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-catalog-traffic
-  namespace: default
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: catalog
-      app.kubernetes.io/instance: catalog
-      app.kubernetes.io/component: service
-      app.kubernetes.io/owner: retail-store-sample
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: ui
-              app.kubernetes.io/instance: ui
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: carts
-              app.kubernetes.io/instance: carts
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: catalog-mysql
-              app.kubernetes.io/instance: catalog-mysql
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-  policyTypes:
-  - Ingress
-  - Egress
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-catalog-mysql-traffic
-  namespace: default
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: catalog-mysql
-      app.kubernetes.io/instance: catalog-mysql
-      app.kubernetes.io/component: service
-      app.kubernetes.io/owner: retail-store-sample
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: catalog
-              app.kubernetes.io/instance: catalog
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-  egress:
-    - to:
-        - podSelector: {}
-  policyTypes:
-  - Ingress
-  - Egress
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-checkout-traffic
-  namespace: default
+  name: checkout
+  namespace: retail-store-sample-app
 spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: checkout
-      app.kubernetes.io/instance: checkout
-      app.kubernetes.io/component: service
-      app.kubernetes.io/owner: retail-store-sample
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: ui
-              app.kubernetes.io/instance: ui
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: checkout-redis
-              app.kubernetes.io/instance: checkout-redis
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: orders
-              app.kubernetes.io/instance: orders
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
   policyTypes:
   - Ingress
   - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ui
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: redis
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-orders-traffic
-  namespace: default
+  name: catalog
+  namespace: retail-store-sample-app
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: orders
-      app.kubernetes.io/instance: orders
-      app.kubernetes.io/component: service
-      app.kubernetes.io/owner: retail-store-sample
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: checkout
-              app.kubernetes.io/instance: checkout
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: orders-postgresql
-              app.kubernetes.io/instance: orders-postgresql
-              app.kubernetes.io/component: postgresql
-              app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: catalog
   policyTypes:
   - Ingress
   - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ui
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: mysql
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-orders-postgresql-traffic
-  namespace: default
+  name: dynamodb
+  namespace: retail-store-sample-app
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: orders-postgresql
-      app.kubernetes.io/instance: orders-postgresql
-      app.kubernetes.io/component: postgresql
-      app.kubernetes.io/managed-by: Helm
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: orders
-              app.kubernetes.io/instance: orders
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-  egress:
-    - to:
-        - podSelector: {}
+      app.kubernetes.io/component: dynamodb
   policyTypes:
   - Ingress
-  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: carts
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-carts-dynamodb-traffic
-  namespace: default
+  name: redis
+  namespace: retail-store-sample-app
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: carts-dynamodb
-      app.kubernetes.io/instance: carts-dynamodb
-      app.kubernetes.io/component: service
-      app.kubernetes.io/owner: retail-store-sample
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: carts
-              app.kubernetes.io/instance: carts
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-  egress:
-    - to:
-        - podSelector: {}
+      app.kubernetes.io/component: redis
   policyTypes:
   - Ingress
-  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: checkout
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-checkout-redis-traffic
-  namespace: default
+  name: mysql
+  namespace: retail-store-sample-app
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: checkout-redis
-      app.kubernetes.io/instance: checkout-redis
-      app.kubernetes.io/component: service
-      app.kubernetes.io/owner: retail-store-sample
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: checkout
-              app.kubernetes.io/instance: checkout
-              app.kubernetes.io/component: service
-              app.kubernetes.io/owner: retail-store-sample
-  egress:
-    - to:
-        - podSelector: {}
+      app.kubernetes.io/component: mysql
   policyTypes:
   - Ingress
-  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: catalog
