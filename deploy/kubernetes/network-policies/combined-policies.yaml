@@ -61,6 +61,9 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: checkout
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: assets
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -135,6 +138,23 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: assets
+  namespace: retail-store-sample-app
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: assets
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ui
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: dynamodb
   namespace: retail-store-sample-app
 spec:
@@ -182,3 +202,37 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: catalog
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: orders
+  namespace: retail-store-sample-app
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: orders
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: postgresql
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgresql
+  namespace: retail-store-sample-app
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: postgresql
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: orders
