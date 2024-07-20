@@ -111,6 +111,10 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/component: redis
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: orders
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -214,25 +218,14 @@ spec:
       app.kubernetes.io/name: orders
   policyTypes:
   - Egress
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/component: postgresql
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: postgresql
-  namespace: retail-store-sample-app
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/component: postgresql
-  policyTypes:
   - Ingress
   ingress:
   - from:
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: orders
+          app.kubernetes.io/name: checkout
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: postgresql
