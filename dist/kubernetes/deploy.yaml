@@ -1049,6 +1049,24 @@ data:
   ENDPOINTS_ORDERS: http://orders
   ENDPOINTS_ASSETS: http://assets
 ---
+# Source: ui/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-cluster-ip
+  namespace: retail-store-sample-app
+spec:
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/instance: ui
+    app.kubernetes.io/name: ui
+    app.kuberneres.io/owner: retail-store-sample
+    app.kubernetes.io/component: service
+---
 # Source: ui/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
