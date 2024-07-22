@@ -1049,33 +1049,6 @@ data:
   ENDPOINTS_ORDERS: http://orders
   ENDPOINTS_ASSETS: http://assets
 ---
-# Source: ui/templates/service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: ui
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-  labels:
-    helm.sh/chart: ui-0.0.1
-    app.kubernetes.io/name: ui
-    app.kubernetes.io/instance: ui
-    app.kubernetes.io/component: service
-    app.kuberneres.io/owner: retail-store-sample
-    app.kubernetes.io/managed-by: Helm
-spec:
-  type: LoadBalancer
-  ports:
-    - port: 80
-      targetPort: http
-      protocol: TCP
-      name: http
-  selector:
-    app.kubernetes.io/name: ui
-    app.kubernetes.io/instance: ui
-    app.kubernetes.io/component: service
-    app.kuberneres.io/owner: retail-store-sample
----
 # Source: ui/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
